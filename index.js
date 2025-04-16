@@ -48,6 +48,8 @@ async function run() {
     const userCollection = db.collection("users");
     const groupTourCollection = db.collection("groupTour");
     const complainCollection = db.collection("complains");
+    const hotelsCollection = db.collection("hotels");
+    const customTourCollection = db.collection("usercustomtour");
 
     // Tour Packages API
     app.get("/tourPackages", async (req, res) => {
@@ -98,6 +100,19 @@ async function run() {
       } catch (error) {
         console.error("Error fetching tour by ID:", error);
         res.status(500).json({ error: "Server error" });
+      }
+    });
+
+    app.post("/usercustomtour", async (req, res) => {
+      try {
+        const booking = req.body;
+        booking.status = "pending";
+        booking.createdAt = new Date();
+
+        const result = await customTourCollection.insertOne(booking);
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: "Failed to book custom tour" });
       }
     });
 
@@ -180,6 +195,16 @@ async function run() {
       } catch (error) {
         console.error("Error inserting complaint:", error);
         res.status(500).json({ error: "Failed to store complaint" });
+      }
+    });
+
+    // get hotels info
+    app.get("/hotels", async (req, res) => {
+      try {
+        const hotels = await hotelsCollection.find().toArray();
+        res.send(hotels);
+      } catch (err) {
+        res.status(500).send({ error: "Failed to fetch hotels" });
       }
     });
 
