@@ -47,6 +47,7 @@ async function run() {
     const tourPackagesCollection = db.collection("tourPackages");
     const userCollection = db.collection("users");
     const groupTourCollection = db.collection("groupTour");
+    const complainCollection = db.collection("complains");
 
     // Tour Packages API
     app.get("/tourPackages", async (req, res) => {
@@ -78,12 +79,26 @@ async function run() {
       const id = req.params.id;
       const bookedSlots = req.body.slots || 1;
 
-      const result = await groupToursCollection.updateOne(
+      const result = await groupTourCollection.updateOne(
         { _id: new ObjectId(id) },
         { $inc: { availableSlots: -bookedSlots } }
       );
 
       res.send(result);
+    });
+
+    app.get("/group-tours/:id", async (req, res) => {
+      const id = req.params.id;
+      try {
+        const result = await groupTourCollection.findOne({ _id: new ObjectId(id) });
+        if (!result) {
+          return res.status(404).json({ message: "Tour not found" });
+        }
+        res.json(result);
+      } catch (error) {
+        console.error("Error fetching tour by ID:", error);
+        res.status(500).json({ error: "Server error" });
+      }
     });
 
     // JWT Token Route
@@ -154,6 +169,18 @@ async function run() {
 
       const result = await userCollection.insertOne(user);
       res.send(result);
+    });
+
+    // complians
+    app.post("/complain", async (req, res) => {
+      const complaint = req.body;
+      try {
+        const result = await complainCollection.insertOne(complaint);
+        res.status(200).json({ message: "Complaint submitted", insertedId: result.insertedId });
+      } catch (error) {
+        console.error("Error inserting complaint:", error);
+        res.status(500).json({ error: "Failed to store complaint" });
+      }
     });
 
     // MongoDB connection confirmation
