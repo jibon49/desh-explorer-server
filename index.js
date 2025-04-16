@@ -46,6 +46,7 @@ async function run() {
     const db = client.db("deshExplorerDB");
     const tourPackagesCollection = db.collection("tourPackages");
     const userCollection = db.collection("users");
+    const groupTourCollection = db.collection("groupTour");
 
     // Tour Packages API
     app.get("/tourPackages", async (req, res) => {
@@ -57,6 +58,31 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await tourPackagesCollection.findOne(query);
+      res.send(result);
+    });
+
+    //group tour
+    app.get("/group-tours", async (req, res) => {
+      const tours = await groupTourCollection.find().toArray();
+      res.send(tours);
+    });
+
+    app.post("/group-tours", async (req, res) => {
+      const tour = req.body;
+      console.log(tour);
+      const result = await groupTourCollection.insertOne(tour);
+      res.send(result);
+    });
+
+    app.patch("/group-tours/:id/book", async (req, res) => {
+      const id = req.params.id;
+      const bookedSlots = req.body.slots || 1;
+
+      const result = await groupToursCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $inc: { availableSlots: -bookedSlots } }
+      );
+
       res.send(result);
     });
 
@@ -90,26 +116,25 @@ async function run() {
       try {
         const result = await userCollection.find({ userMail: email }).toArray();
         res.send(result);
-        console.log(result);
       } catch (error) {
         console.error("Error fetching user by email:", error);
         res.status(500).json({ message: "Internal Server Error" });
       }
     });
 
-    app.patch('/users/:email', async (req, res) => {
+    app.patch("/users/:email", async (req, res) => {
       try {
         const email = req.params.email;
         const { userName, userPhone } = req.body;
-    
+
         const filter = { userMail: email };
         const updateDoc = {
           $set: {
             userName,
-            userPhone
-          }
+            userPhone,
+          },
         };
-    
+
         const result = await userCollection.updateOne(filter, updateDoc);
         res.send(result);
       } catch (error) {
@@ -117,7 +142,6 @@ async function run() {
         res.status(500).json({ message: "Internal server error" });
       }
     });
-    
 
     app.post("/users", async (req, res) => {
       const user = req.body;
