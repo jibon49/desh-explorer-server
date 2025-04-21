@@ -57,6 +57,25 @@ async function run() {
       res.send(result);
     });
 
+    app.patch('/tourPackages/update/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+    
+      try {
+        console.log("Received update for tour package:", updatedData); // helpful log
+    
+        const result = await tourPackagesCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedData }
+        );
+        res.send(result);
+      } catch (err) {
+        console.error('❌ Failed to update tour package', err);
+        res.status(500).json({ error: 'Failed to update tour package' });
+      }
+    });
+    
+
     app.get("/tourPackages/:id", async (req, res) => {
       const id = req.params.id;
       try {
@@ -79,6 +98,7 @@ async function run() {
       const result = await tourPackagesCollection.findOne(query);
       res.send(result);
     });
+
 
     //group tour
     app.get("/group-tours", async (req, res) => {
@@ -105,6 +125,23 @@ async function run() {
       res.send(result);
     });
 
+    app.patch('/group-tours/update/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+    
+      try {
+        const result = await groupTourCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedData }
+        );
+        res.send(result);
+      } catch (err) {
+        console.error('Failed to update group tour', err);
+        res.status(500).json({ error: 'Failed to update group tour' });
+      }
+    });
+    
+
     app.get("/group-tours/:id", async (req, res) => {
       const id = req.params.id;
       try {
@@ -127,6 +164,7 @@ async function run() {
     });
     
 
+    // user custom tour
     app.post("/usercustomtour", async (req, res) => {
       try {
         const booking = req.body;
