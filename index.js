@@ -57,6 +57,22 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/tourPackages/:id", async (req, res) => {
+      const id = req.params.id;
+      try {
+        const result = await tourPackagesCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        if (!result) {
+          return res.status(404).json({ message: "Tour package not found" });
+        }
+        res.json(result);
+      } catch (error) {
+        console.error("Error fetching tour package by ID:", error);
+        res.status(500).json({ error: "Server error" });
+      }
+    });
+
     app.get("/tourDetails/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -92,7 +108,14 @@ async function run() {
     app.get("/group-tours/:id", async (req, res) => {
       const id = req.params.id;
       try {
-        const result = await groupTourCollection.findOne({ _id: new ObjectId(id) });
+        // Check if ID is valid ObjectId
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).json({ message: "Invalid ID format" });
+        }
+
+        const result = await groupTourCollection.findOne({
+          _id: new ObjectId(id),
+        });
         if (!result) {
           return res.status(404).json({ message: "Tour not found" });
         }
@@ -102,6 +125,7 @@ async function run() {
         res.status(500).json({ error: "Server error" });
       }
     });
+    
 
     app.post("/usercustomtour", async (req, res) => {
       try {
@@ -173,6 +197,63 @@ async function run() {
       }
     });
 
+    // Update user by ID (for role changes)
+    app.patch("/users/id/:id", async (req, res) => {
+      const id = req.params.id;
+      const { userRole } = req.body;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+      }
+
+      if (!userRole) {
+        return res.status(400).json({ error: "userRole is required" });
+      }
+
+      try {
+        const result = await userCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { userRole } }
+        );
+
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        res.json(result);
+      } catch (err) {
+        console.error("Failed to update user role", err);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+
+
+    
+
+    // Delete user by ID
+    app.delete("/users/id/:id", async (req, res) => {
+      const id = req.params.id;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+      }
+
+      try {
+        const result = await userCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        res.json(result);
+      } catch (err) {
+        console.error("Failed to delete user", err);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+
     app.post("/users", async (req, res) => {
       const user = req.body;
       const query = { userMail: user.userMail };
@@ -191,7 +272,10 @@ async function run() {
       const complaint = req.body;
       try {
         const result = await complainCollection.insertOne(complaint);
-        res.status(200).json({ message: "Complaint submitted", insertedId: result.insertedId });
+        res.status(200).json({
+          message: "Complaint submitted",
+          insertedId: result.insertedId,
+        });
       } catch (error) {
         console.error("Error inserting complaint:", error);
         res.status(500).json({ error: "Failed to store complaint" });
