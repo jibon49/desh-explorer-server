@@ -139,7 +139,6 @@ async function run() {
 
     app.post("/group-tours", async (req, res) => {
       const tour = req.body;
-      console.log(tour);
       const result = await groupTourCollection.insertOne(tour);
       res.send(result);
     });
@@ -231,6 +230,36 @@ async function run() {
         res.status(500).send({ error: "Failed to book custom tour" });
       }
     });
+
+    app.get("/api/custom-bookings", async (req, res) => {
+      const tours = await customTourCollection.find().toArray();
+      res.send(tours);
+    });
+
+
+    app.delete("/api/custom-bookings/:id", async (req, res) => {
+      const id = req.params.id;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+      }
+
+      try {
+        const result = await customTourCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ error: "Package not found" });
+        }
+
+        res.json(result);
+      } catch (err) {
+        console.error("Failed to delete package", err);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+   
 
     // JWT Token Route
     app.post("/jwt", async (req, res) => {
