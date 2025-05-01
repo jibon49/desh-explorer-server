@@ -413,6 +413,20 @@ async function run() {
       }
     });
 
+    app.post("/hotels", async (req, res) => {
+      const hotel = req.body;
+      try {
+        const result = await hotelsCollection.insertOne(hotel);
+        res.status(200).json({
+          message: "Hotel added successfully",
+          insertedId: result.insertedId,
+        });
+      } catch (error) {
+        console.error("Error inserting hotel:", error);
+        res.status(500).json({ error: "Failed to add hotel" });
+      }
+    });
+
     // MongoDB connection confirmation
     await client.db("admin").command({ ping: 1 });
     console.log("✅ Connected to MongoDB!");
