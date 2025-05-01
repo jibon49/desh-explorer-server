@@ -57,12 +57,20 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/api/tourPackages", async (req, res) => {
+      const tour = req.body;
+      console.log(tour);
+      const result = await tourPackagesCollection.insertOne(tour);
+      res.send(result);
+    });
+
+
     app.patch('/tourPackages/update/:id', async (req, res) => {
       const id = req.params.id;
       const updatedData = req.body;
     
       try {
-        console.log("Received update for tour package:", updatedData); // helpful log
+        console.log("Received update for tour package:", updatedData);
     
         const result = await tourPackagesCollection.updateOne(
           { _id: new ObjectId(id) },
@@ -97,6 +105,29 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await tourPackagesCollection.findOne(query);
       res.send(result);
+    });
+
+    app.delete("/tourPackages/:id", async (req, res) => {
+      const id = req.params.id;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+      }
+
+      try {
+        const result = await tourPackagesCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ error: "Package not found" });
+        }
+
+        res.json(result);
+      } catch (err) {
+        console.error("Failed to delete package", err);
+        res.status(500).json({ error: "Internal server error" });
+      }
     });
 
 
@@ -160,6 +191,29 @@ async function run() {
       } catch (error) {
         console.error("Error fetching tour by ID:", error);
         res.status(500).json({ error: "Server error" });
+      }
+    });
+
+    app.delete("/group-tours/:id", async (req, res) => {
+      const id = req.params.id;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid ID format" });
+      }
+
+      try {
+        const result = await groupTourCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ error: "Package not found" });
+        }
+
+        res.json(result);
+      } catch (err) {
+        console.error("Failed to delete package", err);
+        res.status(500).json({ error: "Internal server error" });
       }
     });
     
