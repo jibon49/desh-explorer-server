@@ -454,6 +454,10 @@ async function run() {
       console.log("Payment info:", payment);
     });
     
+    app.get("/payments", async (req, res) => {
+      const payments = await paymentsCollection.find().toArray();
+      res.send(payments);
+    });
 
     // MongoDB connection confirmation
     await client.db("admin").command({ ping: 1 });
