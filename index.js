@@ -4,6 +4,7 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const port = process.env.PORT || 5000;
 
@@ -50,6 +51,7 @@ async function run() {
     const complainCollection = db.collection("complains");
     const hotelsCollection = db.collection("hotels");
     const customTourCollection = db.collection("usercustomtour");
+    const paymentsCollection = db.collection("payments");
 
     // Tour Packages API
     app.get("/tourPackages", async (req, res) => {
@@ -426,6 +428,32 @@ async function run() {
         res.status(500).json({ error: "Failed to add hotel" });
       }
     });
+
+    // stripe payment gateway
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      })
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+
+    })
+
+
+    // payments
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
+      const result = await db.collection("payments").insertOne(payment);
+      res.send(result);
+      console.log("Payment info:", payment);
+    });
+    
 
     // MongoDB connection confirmation
     await client.db("admin").command({ ping: 1 });
