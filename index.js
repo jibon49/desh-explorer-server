@@ -52,6 +52,7 @@ async function run() {
     const hotelsCollection = db.collection("hotels");
     const customTourCollection = db.collection("usercustomtour");
     const paymentsCollection = db.collection("payments");
+    const reviewsCollection = db.collection("reviews");
 
     // Tour Packages API
     app.get("/tourPackages", async (req, res) => {
@@ -261,6 +262,33 @@ async function run() {
         res.status(500).json({ error: "Internal server error" });
       }
     });
+
+   
+app.get('/group-tours/user/:email', async (req, res) => {
+  try {
+      const email = req.params.email;
+      const tours = await groupTourCollection.find({ 'createdBy.email': email }).toArray();
+      res.json(tours);
+      console.log("Fetching group tours for user:", email);
+  } catch (err) {
+      res.status(500).json({ message: err.message });
+  }
+  
+});
+
+// Add delete endpoint
+app.delete('/group-tours/:id', async (req, res) => {
+  try {
+      const id = req.params.id;
+      const result = await groupTourCollection.deleteOne({ _id: new ObjectId(id) });
+      if (result.deletedCount === 0) {
+          return res.status(404).json({ message: 'Tour not found' });
+      }
+      res.json({ message: 'Tour deleted successfully' });
+  } catch (err) {
+      res.status(500).json({ message: err.message });
+  }
+});
    
 
     // JWT Token Route
@@ -458,6 +486,24 @@ async function run() {
       const payments = await paymentsCollection.find().toArray();
       res.send(payments);
     });
+
+    app.get('/payments/tour/:tourId', async (req, res) => {
+      try {
+          const tourId = req.params.tourId;
+          if (!tourId) {
+              return res.status(400).json({ message: "Tour ID is required" });
+          }
+  
+          const payments = await paymentsCollection.find({ 
+              tourId: tourId}).toArray();
+  
+          res.json(payments);
+          console.log(payments);
+      } catch (err) {
+          console.error("Error fetching payments:", err);
+          res.status(500).json({ message: "Server error while fetching payments" });
+      }
+  });
 
     // MongoDB connection confirmation
     await client.db("admin").command({ ping: 1 });
