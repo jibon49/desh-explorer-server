@@ -505,6 +505,24 @@ app.delete('/group-tours/:id', async (req, res) => {
       }
   });
 
+  app.get("/payments/:email", async (req, res) => {
+    const email = req.params.email;
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ message: "Email query parameter is required" });
+    }
+
+    try {
+      const result = await paymentsCollection.find({ userEmail: email }).toArray();
+      res.send(result);
+    } catch (error) {
+      console.error("Error fetching user by email:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  });
+
     // MongoDB connection confirmation
     await client.db("admin").command({ ping: 1 });
     console.log("✅ Connected to MongoDB!");
