@@ -146,14 +146,29 @@ async function run() {
 
     app.patch("/group-tours/:id/book", async (req, res) => {
       const id = req.params.id;
-      const bookedSlots = req.body.slots || 1;
-
-      const result = await groupTourCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $inc: { availableSlots: -bookedSlots } }
-      );
-
-      res.send(result);
+      const bookedSlots = parseInt(req.body.slots) || 1; 
+      
+      try {
+        const tour = await groupTourCollection.findOne({ _id: new ObjectId(id) });
+        
+        if (!tour) {
+          return res.status(404).json({ error: "Tour not found" });
+        }
+        
+        if (tour.availableSlots < bookedSlots) {
+          return res.status(400).json({ error: "Not enough available slots" });
+        }
+    
+        const result = await groupTourCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $inc: { availableSlots: -bookedSlots } }
+        );
+    
+        res.send(result);
+      } catch (err) {
+        console.error("Error booking tour:", err);
+        res.status(500).json({ error: "Failed to book tour" });
+      }
     });
 
     app.patch("/group-tours/update/:id", async (req, res) => {
@@ -555,6 +570,13 @@ async function run() {
       } catch (err) {
         res.status(500).send({ error: "Failed to fetch reviews" });
       }
+    });
+
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await db.collection("reviews").insertOne(review);
+      res.send(result);
+      console.log("review info:", review);
     });
 
     // MongoDB connection confirmation
