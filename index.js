@@ -53,6 +53,9 @@ async function run() {
     const customTourCollection = db.collection("usercustomtour");
     const paymentsCollection = db.collection("payments");
     const reviewsCollection = db.collection("reviews");
+    const storiesCollection = db.collection("stories");
+    const likesCollection = db.collection("likes");
+    const commentsCollection = db.collection("comments");
 
     // Tour Packages API
     app.get("/tourPackages", async (req, res) => {
@@ -146,24 +149,26 @@ async function run() {
 
     app.patch("/group-tours/:id/book", async (req, res) => {
       const id = req.params.id;
-      const bookedSlots = parseInt(req.body.slots) || 1; 
-      
+      const bookedSlots = parseInt(req.body.slots) || 1;
+
       try {
-        const tour = await groupTourCollection.findOne({ _id: new ObjectId(id) });
-        
+        const tour = await groupTourCollection.findOne({
+          _id: new ObjectId(id),
+        });
+
         if (!tour) {
           return res.status(404).json({ error: "Tour not found" });
         }
-        
+
         if (tour.availableSlots < bookedSlots) {
           return res.status(400).json({ error: "Not enough available slots" });
         }
-    
+
         const result = await groupTourCollection.updateOne(
           { _id: new ObjectId(id) },
           { $inc: { availableSlots: -bookedSlots } }
         );
-    
+
         res.send(result);
       } catch (err) {
         console.error("Error booking tour:", err);
@@ -578,6 +583,92 @@ async function run() {
       res.send(result);
       console.log("review info:", review);
     });
+
+    // stories
+app.post("/stories", async (req, res) => {
+  const story = req.body;
+  try {
+    const result = await storiesCollection.insertOne({
+      ...story,
+      likes: [],
+      comments: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    res.send(result);
+  } catch (err) {
+    res.status(500).send({ error: "Failed to save story" });
+  }
+});
+
+app.get("/stories", async (req, res) => {
+  try {
+    const stories = await storiesCollection
+      .find()
+      .sort({ createdAt: -1 })
+      .toArray();
+    res.send(stories);
+  } catch (err) {
+    res.status(500).send({ error: "Failed to fetch stories" });
+  }
+});
+
+// Like a story
+app.patch("/stories/:id/like", async (req, res) => {
+  const { userId } = req.body;
+  try {
+    const story = await storiesCollection.findOne({ 
+      _id: new ObjectId(req.params.id) 
+    });
+    
+    if (!story) {
+      return res.status(404).send({ error: "Story not found" });
+    }
+
+    const isLiked = story.likes.includes(userId);
+    const updateOperation = isLiked 
+      ? { $pull: { likes: userId } }
+      : { $addToSet: { likes: userId } };
+
+    const result = await storiesCollection.updateOne(
+      { _id: new ObjectId(req.params.id) },
+      updateOperation
+    );
+    
+    res.send(result);
+  } catch (err) {
+    res.status(500).send({ error: "Failed to update like status" });
+  }
+});
+
+// Add comment to story
+app.post("/stories/:id/comments", async (req, res) => {
+  const { userId, text, userName, userPhoto } = req.body;
+  
+  if (!text || !userId) {
+    return res.status(400).send({ error: "Missing required fields" });
+  }
+
+  try {
+    const result = await storiesCollection.updateOne(
+      { _id: new ObjectId(req.params.id) },
+      {
+        $push: {
+          comments: {
+            userId,
+            userName,
+            userPhoto,
+            text,
+            createdAt: new Date()
+          }
+        }
+      }
+    );
+    res.send(result);
+  } catch (err) {
+    res.status(500).send({ error: "Failed to add comment" });
+  }
+});
 
     // MongoDB connection confirmation
     await client.db("admin").command({ ping: 1 });
