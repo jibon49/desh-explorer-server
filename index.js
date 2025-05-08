@@ -67,41 +67,40 @@ async function run() {
       res.send(result);
     });
 
-
-    app.patch('/tourPackages/update/:id', async (req, res) => {
+    app.patch("/tourPackages/update/:id", async (req, res) => {
       const id = req.params.id;
       const updatedData = req.body;
-    
+
       try {
         console.log("Received update for tour package:", updatedData);
-    
+
         const result = await tourPackagesCollection.updateOne(
           { _id: new ObjectId(id) },
           { $set: updatedData }
         );
         res.send(result);
       } catch (err) {
-        console.error('❌ Failed to update tour package', err);
-        res.status(500).json({ error: 'Failed to update tour package' });
+        console.error("❌ Failed to update tour package", err);
+        res.status(500).json({ error: "Failed to update tour package" });
       }
     });
-    
 
-    app.get("/tourPackages/:id", async (req, res) => {
-      const id = req.params.id;
-      try {
-        const result = await tourPackagesCollection.findOne({
-          _id: new ObjectId(id),
-        });
-        if (!result) {
-          return res.status(404).json({ message: "Tour package not found" });
-        }
-        res.json(result);
-      } catch (error) {
-        console.error("Error fetching tour package by ID:", error);
-        res.status(500).json({ error: "Server error" });
-      }
-    });
+    // app.get("/tourPackages/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   try {
+    //     const result = await tourPackagesCollection.findOne({
+    //       _id: new ObjectId(id),
+    //     });
+    //     if (!result) {
+    //       return res.status(404).json({ message: "Tour package not found" });
+    //     }
+    //     res.json(result);
+    //   } catch (error) {
+    //     console.error("Error fetching tour package by ID:", error);
+    //     res.status(500).json({ error: "Server error" });
+    //   }
+    //   console.log("Fetching tour package by ID:", id);
+    // });
 
     app.get("/tourDetails/:id", async (req, res) => {
       const id = req.params.id;
@@ -133,7 +132,6 @@ async function run() {
       }
     });
 
-
     //group tour
     app.get("/group-tours", async (req, res) => {
       const tours = await groupTourCollection.find().toArray();
@@ -158,10 +156,10 @@ async function run() {
       res.send(result);
     });
 
-    app.patch('/group-tours/update/:id', async (req, res) => {
+    app.patch("/group-tours/update/:id", async (req, res) => {
       const id = req.params.id;
       const updatedData = req.body;
-    
+
       try {
         const result = await groupTourCollection.updateOne(
           { _id: new ObjectId(id) },
@@ -169,31 +167,37 @@ async function run() {
         );
         res.send(result);
       } catch (err) {
-        console.error('Failed to update group tour', err);
-        res.status(500).json({ error: 'Failed to update group tour' });
+        console.error("Failed to update group tour", err);
+        res.status(500).json({ error: "Failed to update group tour" });
       }
     });
-    
+
+    // app.get("/group-tours/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   try {
+    //     // Check if ID is valid ObjectId
+    //     if (!ObjectId.isValid(id)) {
+    //       return res.status(400).json({ message: "Invalid ID format" });
+    //     }
+
+    //     const result = await groupTourCollection.findOne({
+    //       _id: new ObjectId(id),
+    //     });
+    //     if (!result) {
+    //       return res.status(404).json({ message: "Tour not found" });
+    //     }
+    //     res.json(result);
+    //   } catch (error) {
+    //     console.error("Error fetching tour by ID:", error);
+    //     res.status(500).json({ error: "Server error" });
+    //   }
+    // });
 
     app.get("/group-tours/:id", async (req, res) => {
       const id = req.params.id;
-      try {
-        // Check if ID is valid ObjectId
-        if (!ObjectId.isValid(id)) {
-          return res.status(400).json({ message: "Invalid ID format" });
-        }
-
-        const result = await groupTourCollection.findOne({
-          _id: new ObjectId(id),
-        });
-        if (!result) {
-          return res.status(404).json({ message: "Tour not found" });
-        }
-        res.json(result);
-      } catch (error) {
-        console.error("Error fetching tour by ID:", error);
-        res.status(500).json({ error: "Server error" });
-      }
+      const query = { _id: new ObjectId(id) };
+      const result = await groupTourCollection.findOne(query);
+      res.send(result);
     });
 
     app.delete("/group-tours/:id", async (req, res) => {
@@ -218,7 +222,6 @@ async function run() {
         res.status(500).json({ error: "Internal server error" });
       }
     });
-    
 
     // user custom tour
     app.post("/usercustomtour", async (req, res) => {
@@ -238,7 +241,6 @@ async function run() {
       const tours = await customTourCollection.find().toArray();
       res.send(tours);
     });
-
 
     app.delete("/api/custom-bookings/:id", async (req, res) => {
       const id = req.params.id;
@@ -263,33 +265,34 @@ async function run() {
       }
     });
 
-   
-app.get('/group-tours/user/:email', async (req, res) => {
-  try {
-      const email = req.params.email;
-      const tours = await groupTourCollection.find({ 'createdBy.email': email }).toArray();
-      res.json(tours);
-      console.log("Fetching group tours for user:", email);
-  } catch (err) {
-      res.status(500).json({ message: err.message });
-  }
-  
-});
-
-// Add delete endpoint
-app.delete('/group-tours/:id', async (req, res) => {
-  try {
-      const id = req.params.id;
-      const result = await groupTourCollection.deleteOne({ _id: new ObjectId(id) });
-      if (result.deletedCount === 0) {
-          return res.status(404).json({ message: 'Tour not found' });
+    app.get("/group-tours/user/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const tours = await groupTourCollection
+          .find({ "createdBy.email": email })
+          .toArray();
+        res.json(tours);
+        console.log("Fetching group tours for user:", email);
+      } catch (err) {
+        res.status(500).json({ message: err.message });
       }
-      res.json({ message: 'Tour deleted successfully' });
-  } catch (err) {
-      res.status(500).json({ message: err.message });
-  }
-});
-   
+    });
+
+    // Add delete endpoint
+    app.delete("/group-tours/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const result = await groupTourCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: "Tour not found" });
+        }
+        res.json({ message: "Tour deleted successfully" });
+      } catch (err) {
+        res.status(500).json({ message: err.message });
+      }
+    });
 
     // JWT Token Route
     app.post("/jwt", async (req, res) => {
@@ -378,9 +381,6 @@ app.delete('/group-tours/:id', async (req, res) => {
       }
     });
 
-
-    
-
     // Delete user by ID
     app.delete("/users/id/:id", async (req, res) => {
       const id = req.params.id;
@@ -458,21 +458,19 @@ app.delete('/group-tours/:id', async (req, res) => {
     });
 
     // stripe payment gateway
-    app.post('/create-payment-intent', async (req, res) => {
+    app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100);
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
-        currency: 'usd',
-        payment_method_types: ['card']
-      })
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
 
       res.send({
-        clientSecret: paymentIntent.client_secret
-      })
-
-    })
-
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
 
     // payments
     app.post("/payments", async (req, res) => {
@@ -481,47 +479,83 @@ app.delete('/group-tours/:id', async (req, res) => {
       res.send(result);
       console.log("Payment info:", payment);
     });
-    
+
     app.get("/payments", async (req, res) => {
       const payments = await paymentsCollection.find().toArray();
       res.send(payments);
     });
 
-    app.get('/payments/tour/:tourId', async (req, res) => {
+    app.get("/payments/tour/:tourId", async (req, res) => {
       try {
-          const tourId = req.params.tourId;
-          if (!tourId) {
-              return res.status(400).json({ message: "Tour ID is required" });
-          }
-  
-          const payments = await paymentsCollection.find({ 
-              tourId: tourId}).toArray();
-  
-          res.json(payments);
-          console.log(payments);
+        const tourId = req.params.tourId;
+        if (!tourId) {
+          return res.status(400).json({ message: "Tour ID is required" });
+        }
+
+        const payments = await paymentsCollection
+          .find({
+            tourId: tourId,
+          })
+          .toArray();
+
+        res.json(payments);
+        console.log(payments);
       } catch (err) {
-          console.error("Error fetching payments:", err);
-          res.status(500).json({ message: "Server error while fetching payments" });
+        console.error("Error fetching payments:", err);
+        res
+          .status(500)
+          .json({ message: "Server error while fetching payments" });
       }
-  });
+    });
 
-  app.get("/payments/:email", async (req, res) => {
-    const email = req.params.email;
+    app.get("/payments/:email", async (req, res) => {
+      const email = req.params.email;
 
-    if (!email) {
-      return res
-        .status(400)
-        .json({ message: "Email query parameter is required" });
-    }
+      if (!email) {
+        return res
+          .status(400)
+          .json({ message: "Email query parameter is required" });
+      }
 
-    try {
-      const result = await paymentsCollection.find({ userEmail: email }).toArray();
+      try {
+        const result = await paymentsCollection
+          .find({ userEmail: email })
+          .toArray();
+        res.send(result);
+        console.log("Fetching payments for user:", email);
+        console.log(result);
+      } catch (error) {
+        console.error("Error fetching user by email:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+      }
+    });
+
+    // complains
+    app.get("/complains", async (req, res) => {
+      try {
+        const complains = await complainCollection.find().toArray();
+        res.send(complains);
+      } catch (err) {
+        res.status(500).send({ error: "Failed to fetch hotels" });
+      }
+    });
+
+    app.post("/complains", async (req, res) => {
+      const complains = req.body;
+      const result = await db.collection("complains").insertOne(complains);
       res.send(result);
-    } catch (error) {
-      console.error("Error fetching user by email:", error);
-      res.status(500).json({ message: "Internal Server Error" });
-    }
-  });
+      console.log("complains info:", complains);
+    });
+
+    // reviews
+    app.get("/reviews", async (req, res) => {
+      try {
+        const reviews = await reviewsCollection.find().toArray();
+        res.send(reviews);
+      } catch (err) {
+        res.status(500).send({ error: "Failed to fetch reviews" });
+      }
+    });
 
     // MongoDB connection confirmation
     await client.db("admin").command({ ping: 1 });
